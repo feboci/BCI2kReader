@@ -65,7 +65,7 @@ class BCI2kReader(io.IOBase):
         self.__usecache = flag
 
     def _parameters(self):
-        return pd.DataFrame.from_dict(self.__reader.params)
+        return self.__reader.params
 
     parameters = property(_parameters)
 
