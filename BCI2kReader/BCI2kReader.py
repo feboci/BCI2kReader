@@ -45,7 +45,7 @@ class BCI2kReader(io.IOBase):
             wrt = 'bof'
         elif whence == io.SEEK_END:
             wrt = 'eof'
-        elif whence == io.SEEK_END:
+        elif whence == io.SEEK_CUR:
             wrt = 'cof'
         else:
             raise IOError('unknown search origin')
@@ -115,7 +115,7 @@ class BCI2kReader(io.IOBase):
             pos = self.tell()
             if nsamp < 0:
                 nsamp = self.__reader.samples()-pos
-            return self.__signals[pos:pos+nsamp, :], self.__states[pos:pos+nsamp, :]
+            return self.__signals[:, pos:pos+nsamp], self.__slicedict(self.__states, slice(pos, pos+nsamp))
         else:
             return self.__reader.decode(nsamp, 'all', apply_gain)
 
@@ -128,6 +128,31 @@ class BCI2kReader(io.IOBase):
                 return self.__signals, self.__states
             else:
                 return self.__reader.decode('all', 'all', apply_gain)
+
+    def __slicedict(self, dic_in, slice_idx):
+        retdict = dict.fromkeys(dic_in.keys())
+        for key in dic_in:
+            retdict[key] = dic_in[key][:,slice_idx]
+
+        return retdict
+
+    def __len__(self):
+        return len(self.__reader.samples())
+
+    def __repr__(self):
+        return self._signals, self._states
+
+    def __getitem__(self, sliced):
+        if self.__states is not None and self.__usecache:
+            return self.__signals[:, sliced], self.__slicedict(self.__states, sliced)
+        else:
+            old = self.tell()
+            self.seek(sliced.start, io.SEEK_SET)
+            data, states = self.read(sliced.stop-sliced.start)
+            self.seek(old, io.SEEK_SET)
+            newslice = slice(0,sliced.stop-sliced.start, sliced.step)
+            return data[newslice,:], self.__slicedict(states, newslice)
+
 
 
 
