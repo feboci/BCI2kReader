@@ -13,15 +13,18 @@ pip install BCI2kReader
 
 This package is untested and still under development, use with caution!
 
-USAGE:
+### USAGE:
 
 from BCI2kReader import BCI2kReader as b2k
 
 test = b2k.BCI2kReader('yourbci2000testfile.dat') #opens a stream to the dat file
 test.samplingrate # sampling rate
-### # you can use the reader for random access using read(), seek()
+##### # you can use the reader for random access using read(), seek()
 my_signals=test.signals #reads the whole file and stores it in a numpy matrix channels (channels,datapoints)
 my_states=test.states #reads all states as a dictionary .. 
 my_states['Running'] # access to the Running state
-### # By default calling test.signals or test.states caches all data in the object, this default behaviour can be changed by either calling the constructor with usecache=false or by calling .usecache(False). The cache can be cleared by calling .purge()
+##### # By default calling test.signals or test.states caches all data in the object, this default behaviour can be changed by either calling the constructor with usecache=false or by calling .usecache(False). The cache can be cleared by calling .purge()
+#### # the reader object also supports direct slicing
+signalslice, stateslice = test[0:100] #returns the first 100 items, this works with cached and non cached mode and does not alter the current position of the file pointer
+
 
