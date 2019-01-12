@@ -41,11 +41,11 @@ class BCI2kReader(io.IOBase):
         return self.__reader.file.readable()
 
     def seek(self, offset, whence=0):
-        if whence == io.SEEK_SET:
+        if whence == 0: # do not use io. variables for compatability
             wrt = 'bof'
-        elif whence == io.SEEK_END:
+        elif whence == 1:
             wrt = 'eof'
-        elif whence == io.SEEK_CUR:
+        elif whence == 2:
             wrt = 'cof'
         else:
             raise IOError('unknown search origin')
