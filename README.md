@@ -1,4 +1,4 @@
-# BCI2kReader
+# BCI2kReader   [![Build Status](https://travis-ci.com/markusadamek/BCI2kReader.svg?branch=master)](https://travis-ci.com/markusadamek/BCI2kReader)
 Python 3 and Python 2 compatible BCI2000 .dat file reader.
 
 File reader for BCI2000 dat files for python 3. The reader should also work for python 2, but it has not been tested yet.
