@@ -5,7 +5,7 @@ import os
 class TestStartup(unittest.TestCase):
 	def test_SimpleFileLoading(self):
 		dirname = os.path.dirname(__file__)
-		filename = os.path.join(dirname, 'TestData\eeg1_1.dat')
+		filename = os.path.join(dirname, 'TestData/eeg1_1.dat')
 		print(filename)
 		file=b2k.BCI2kReader(filename)
 		self.assertIsNotNone(file)
