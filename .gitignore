@@ -102,3 +102,10 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+/.vs/VSWorkspaceState.json
+/.vs/tasks.vs.json
+/.vs/slnx.sqlite
+/.vs/ProjectSettings.json
+/.vs/config/applicationhost.config
+/.vs/BCI2kReader/v15
+/BCI2kReader.pyproj
