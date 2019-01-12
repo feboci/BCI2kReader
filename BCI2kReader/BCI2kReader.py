@@ -76,11 +76,11 @@ class BCI2kReader(io.IOBase):
         pos = self.tell()
         if self.__usecache:
             self.__signals, self.__states = self.__reader.decode('all')
-            self.seek(pos, io.SEEK_SET)
+            self.seek(pos, 0)
             return self.__signals
         else:
             signalbuffer, statebuffer = self.__reader.decode('all')
-            self.seek(pos, io.SEEK_SET)
+            self.seek(pos, 0)
             return signalbuffer
 
     signals = property(_signals)
@@ -91,11 +91,11 @@ class BCI2kReader(io.IOBase):
         pos = self.tell()
         if self.__usecache:
             self.__signals, self.__states = self.__reader.decode('all')
-            self.seek(pos, io.SEEK_SET)
+            self.seek(pos, 0)
             return self.__states
         else:
             signalbuffer, statebuffer = self.__reader.decode('all')
-            self.seek(pos, io.SEEK_SET)
+            self.seek(pos, 0)
             return statebuffer
         # set position
 
@@ -150,9 +150,9 @@ class BCI2kReader(io.IOBase):
             return self.__signals[:, sliced], self.__slicedict(self.__states, sliced)
         else:
             old = self.tell()
-            self.seek(sliced.start, io.SEEK_SET)
+            self.seek(sliced.start, 0)
             data, states = self.read((sliced.stop-sliced.start))
-            self.seek(old, io.SEEK_SET)
+            self.seek(old, 0)
             newslice = slice(0,(sliced.stop-sliced.start), sliced.step)
             return data[:,newslice], self.__slicedict(states, newslice)
 
