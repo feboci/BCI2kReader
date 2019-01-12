@@ -30,7 +30,7 @@ class BCI2kReader(io.IOBase):
         self.__reader.close()
 
     def _getclosed(self):
-        return self.__reader.closed
+        return self.__reader.file.closed
 
     closed = property(_getclosed)
 
@@ -143,15 +143,18 @@ class BCI2kReader(io.IOBase):
         return self._signals, self._states
 
     def __getitem__(self, sliced):
+        sliced = sliced if isinstance(sliced,slice)  else slice(sliced,sliced+1,1)
+        ind=sliced.indices(self.__reader.samples())
+        sliced=slice(ind[0],ind[1],ind[2])
         if self.__states is not None and self.__usecache:
             return self.__signals[:, sliced], self.__slicedict(self.__states, sliced)
         else:
             old = self.tell()
             self.seek(sliced.start, io.SEEK_SET)
-            data, states = self.read(sliced.stop-sliced.start)
+            data, states = self.read((sliced.stop-sliced.start))
             self.seek(old, io.SEEK_SET)
-            newslice = slice(0,sliced.stop-sliced.start, sliced.step)
-            return data[newslice,:], self.__slicedict(states, newslice)
+            newslice = slice(0,(sliced.stop-sliced.start), sliced.step)
+            return data[:,newslice], self.__slicedict(states, newslice)
 
 
 
