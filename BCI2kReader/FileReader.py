@@ -30,7 +30,7 @@ import os
 import sys
 import struct
 import time
-
+import codecs
 
 try:
     import numpy
@@ -84,7 +84,7 @@ class bcistream(object):
         self.offsets = None
         self.params = {}
 
-        self.file = open(self.filename, 'r', encoding='latin_1')
+        self.file = codecs.open(self.filename, 'r', encoding='latin_1')
         self.readHeader()
         self.file.close()
 
