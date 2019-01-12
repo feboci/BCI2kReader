@@ -15,7 +15,7 @@
 #
 
 import io as io
-from BCI2kReader.FileReader import bcistream
+from .FileReader import bcistream
 
 
 class BCI2kReader(io.IOBase):
