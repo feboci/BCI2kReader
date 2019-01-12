@@ -84,7 +84,7 @@ class bcistream(object):
         self.offsets = None
         self.params = {}
 
-        self.file = open(self.filename, 'r')
+        self.file = open(self.filename, 'r', encoding='ansi')
         self.readHeader()
         self.file.close()
 
