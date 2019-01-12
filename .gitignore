@@ -109,3 +109,4 @@ venv.bak/
 /.vs/config/applicationhost.config
 /.vs/BCI2kReader/v15
 /BCI2kReader.pyproj
+/BCI2kReader.sln
