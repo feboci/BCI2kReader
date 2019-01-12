@@ -12,7 +12,7 @@ class TestStartup(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         filename = os.path.join(dirname, 'TestData/eeg1_1.dat')
         file=b2k.BCI2kReader(filename)
-        self.assertIsNotNone(file)
+        self.assertNotEqual(file,None)
         file.close()
 
     def test_ReadInPlace(self):
