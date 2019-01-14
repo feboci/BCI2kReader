@@ -16,7 +16,7 @@
 
 import io as io
 from .FileReader import bcistream
-
+import numpy as np
 
 class BCI2kReader(io.IOBase):
 
@@ -41,7 +41,7 @@ class BCI2kReader(io.IOBase):
         return self.__reader.file.readable()
 
     def seek(self, offset, whence=0):
-        if whence == 0: # do not use io. variables for compatability
+        if whence == 0:  # do not use io. variables for comparability
             wrt = 'bof'
         elif whence == 1:
             wrt = 'eof'
@@ -141,9 +141,37 @@ class BCI2kReader(io.IOBase):
         return self._signals, self._states
 
     def __getitem__(self, sliced):
+        if isinstance(sliced, np.ndarray):
+            if sliced.dtype != bool:
+                raise IndexError('Expected array to be of type bool')
+
+            if sliced.shape[0] == 1:
+                sliced = np.transpose(sliced)
+
+            if self.__states is not None and self.__usecache:
+                return self.__signals[:, sliced[:, 0]], self.__states[sliced[:, 0]]
+            else:
+                data = np.zeros((self.__reader.channels(), sum(sliced[:, 0])))
+                states = StateDictionary()
+                sliced = np.r_[False, sliced[:, 0], False]
+                idx = np.flatnonzero(sliced[:-1] != sliced[1:])
+                idx = zip(idx[:-1:2], idx[1::2])
+                curr_pos = 0
+                for start, stop in idx:
+                    dat_len = stop-start
+                    self.seek(start, 0)
+                    data[:, curr_pos:curr_pos + dat_len], buff_states = self.read(dat_len)
+                    for key in buff_states.keys():
+                        if key in states:
+                            states[key] = np.append(states[key], buff_states[key], axis=1)
+                        else:
+                            states[key] = buff_states[key]
+                    curr_pos = curr_pos+dat_len
+                return data, states
+
         sliced = sliced if isinstance(sliced, slice) else slice(sliced, sliced+1, 1)
         ind = sliced.indices(self.__reader.samples())
-        sliced=slice(ind[0], ind[1], ind[2])
+        sliced = slice(ind[0], ind[1], ind[2])
         if self.__states is not None and self.__usecache:
             return self.__signals[:, sliced], self.__states[sliced]
         else:

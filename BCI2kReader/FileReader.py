@@ -257,7 +257,7 @@ class bcistream(object):
             if self.offsets is not None: sig -= self.offsets
             if self.gains is not None: sig *= self.gains
 
-        sig = numpy.asmatrix(sig)
+        #sig = numpy.asmatrix(sig)
         return sig, rawstates
 
     def decode(self, nsamp=1, states='all', apply_gains=True):

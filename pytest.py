@@ -26,13 +26,13 @@ class TestStartup(unittest.TestCase):
             self.assertEqual(states['Running'].shape,(1,100))
             
     def SliceNotationTest1(self, file):
-        demo_slice=np.zeros((1,300))
+        demo_slice = np.zeros((1,300))
         signals, states = file[5:99]
         self.assertEqual(signals.shape,(64, demo_slice[:,5:99].shape[1]),'Signals shape')
         self.assertEqual(states['Running'].shape, demo_slice[:, 5:99].shape,'State shape')
 
     def SliceNotationTest2(self, file):
-        demo_slice=np.zeros((1,300))
+        demo_slice = np.zeros((1,300))
         signals, states = file[100:200:2]
         self.assertEqual(signals.shape, (64, demo_slice[:, 100:200:2].shape[1]),'Signals shape with other stepsize')
         self.assertEqual(states['Running'].shape, demo_slice[:, 100:200:2].shape,'State shape with other stepsize')
@@ -61,7 +61,7 @@ class TestStartup(unittest.TestCase):
     def test_SliceInPlace1(self):
         dirname = os.path.dirname(__file__)
         filename = os.path.join(dirname, 'TestData/eeg1_1.dat')
-        with b2k.BCI2kReader(filename,False) as file:
+        with b2k.BCI2kReader(filename, False) as file:
             self.SliceNotationTest1(file)
             self.SliceNotationTest2(file)
             self.SliceNotationTest3(file)
@@ -73,7 +73,7 @@ class TestStartup(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         filename = os.path.join(dirname, 'TestData/eeg1_1.dat')
         with b2k.BCI2kReader(filename,True) as file:
-            file.signals # fills buffer
+            file.signals  # fills buffer
             self.SliceNotationTest1(file)
             self.SliceNotationTest2(file)
             self.SliceNotationTest3(file)
@@ -97,6 +97,30 @@ class TestStartup(unittest.TestCase):
             self.assertEqual(file.states['Running'].shape, (1, 19696))
             self.assertEqual(file.states[1:100]['Running'].shape, (1, demo_slice[:, 1:100].shape[1]))
             self.assertEqual(file.states['Running'][:, 1:100].shape, (1, demo_slice[:, 1:100].shape[1]))
+
+    def test_BinarySlicingBuffered(self):
+        dirname = os.path.dirname(__file__)
+        filename = os.path.join(dirname, 'TestData/eeg1_1.dat')
+        with b2k.BCI2kReader(filename) as file:
+            stimmask = file.states['StimulusCode'] == 1
+            sigs = file.signals[:, stimmask[0, :]]
+            signals, states = file[stimmask]
+            self.assertEqual(signals.shape, (64, sum(stimmask[0, :])))
+            self.assertEqual(states.shape, (8, sum(stimmask[0, :])))
+            self.assertListEqual(signals[1, :].tolist(), sigs[1, :].tolist())
+            self.assertEqual((states['StimulusCode'] == 1).all(), True)
+
+    def test_BinarySlicingUnBuffered(self):
+        dirname = os.path.dirname(__file__)
+        filename = os.path.join(dirname, 'TestData/eeg1_1.dat')
+        with b2k.BCI2kReader(filename, False) as file:
+            stimmask = file.states['StimulusCode'] == 1
+            sigs = file.signals[:, stimmask[0, :]]
+            signals, states = file[stimmask]
+            self.assertEqual(signals.shape, (64, sum(stimmask[0, :])))
+            self.assertEqual(states.shape, (8, sum(stimmask[0, :])))
+            self.assertListEqual(signals[1, :].tolist(), sigs[1, :].tolist())
+            self.assertEqual((states['StimulusCode'] == 1).all(), True)
 
 
 if __name__ == "__main__":
