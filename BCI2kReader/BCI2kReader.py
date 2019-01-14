@@ -18,15 +18,34 @@ import io as io
 from .FileReader import bcistream
 import numpy as np
 
-class BCI2kReader(io.IOBase):
 
+class BCI2kReader(io.IOBase):
+    """" The BCI2kReader reads a BCI20000 .dat file. It inherits from io.IOBase and can use the with clause """
     def __init__(self, filename, usecache=True):
+        """Constructor
+
+
+        Parameters
+        ----------
+        filename : str
+            Path to the BCI2000 .dat file
+        usecache : bool
+            enables the object to cache the signal and states data internally.
+            After a readall() (or the signals or states property is called) is called
+            the values are stored in the object and all subsequent data queries will be performed with the cached data.
+            If caching is disabled, all queries will be read directly from the file.
+            To delete the cached data call .purge()
+        """
         self.__reader = bcistream(filename)
         self.__states = None
         self.__signals = None
         self.__usecache = usecache
 
     def close(self):
+        """ Close the file
+
+            If caching is enabled, the data will stay in the cache
+        """
         self.__reader.close()
 
     def _getclosed(self):
@@ -41,6 +60,18 @@ class BCI2kReader(io.IOBase):
         return self.__reader.file.readable()
 
     def seek(self, offset, whence=0):
+        """ Set the file pointer to a specific position
+
+        Parameters
+        ----------
+        offset : int
+            Offset in data samples
+        whence : int
+            counting position
+            io.SEEK_SET | 0 relative to start
+            io.SEEK_CUR = 1 | relative to current position
+            io.SEEK_END = 2 | relative to end
+        """
         if whence == 0:  # do not use io. variables for comparability
             wrt = 'bof'
         elif whence == 1:
@@ -56,6 +87,17 @@ class BCI2kReader(io.IOBase):
         return True
 
     def tell(self):
+        """
+        File pointer position
+        
+        Parameters
+        ----------
+        
+        
+        Returns
+        -------
+         int
+         returns the current position of the file pointer """
         return self.__reader.tell()
 
     def writable(self):
@@ -68,6 +110,7 @@ class BCI2kReader(io.IOBase):
         return self.__reader.params
 
     parameters = property(_parameters)
+    """ Returns the parameters """
 
     def _signals(self):
         if self.__signals is not None:
@@ -85,6 +128,9 @@ class BCI2kReader(io.IOBase):
             return signalbuffer
 
     signals = property(_signals)
+    """ Returns the signals in the format (channels x samples),
+        if caching is enabled, this will cause the signals and states to be cached
+    """
 
     def _states(self):
         if self.__states is not None:
@@ -102,8 +148,18 @@ class BCI2kReader(io.IOBase):
         # set position
 
     states = property(_states)
+    """ Returns the states in the format (states x samples),
+        if caching is enabled, this will cause the signals and states to be cached
+        The states are stored as a StateDictionary (Dict with additional slicing capabilities)
+    """
 
     def purge(self):
+        """ Clears cached data
+
+        Parameters
+        ----------
+
+        """
         self.__states = None
         self.__signals = None
 
@@ -111,8 +167,28 @@ class BCI2kReader(io.IOBase):
         return self.__reader.samplingrate()
 
     samplingrate = property(_samplingrate)
+    """ Sampling rate of the signals defined in file """
 
     def read(self, nsamp=-1, apply_gain=True):
+        """Reads an arbitrary amount of data either from cache or file starting at the current file pointer position
+
+        Parameters
+        ----------
+            nsamp : int
+                Number of samples to be read
+
+            apply_gain : bool
+                If true data will be multiplied with channel gain
+                This parameter is ignored if working with cached data
+
+        Returns
+        -------
+            signals : ndarray
+                channel x samples numpy array
+            states : StateDictionary
+                Dictionary States x samples
+
+        """
         if self.__states is not None and self.__usecache:
             pos = self.tell()
             if nsamp < 0:
@@ -124,6 +200,22 @@ class BCI2kReader(io.IOBase):
             return sig, states
 
     def readall(self, apply_gain=True):
+        """Reads all data from the file and caches the data if caching is enabled
+
+        Parameters
+        ----------
+            apply_gain : bool
+                If True, signal data will be multiplied with gain specified in parameter file
+
+         Returns
+        -------
+            signals : ndarray
+                channel x samples numpy array
+            states : StateDictionary
+                Dictionary States x samples
+
+        """
+
         if self.__states is not None and self.__usecache:
             return self.__signals, self.__states
         else:
@@ -132,9 +224,16 @@ class BCI2kReader(io.IOBase):
                 self.__states = StateDictionary(statebuffer)
                 return self.__signals, self.__states
             else:
-                return self.__reader.decode('all', 'all', apply_gain)
+                buffsignals, buffstates =  self.__reader.decode('all', 'all', apply_gain)
+                return buffsignals, StateDictionary(buffstates)
 
     def __len__(self):
+        """
+        Returns
+        ------
+            int
+            Number of samples
+        """
         return len(self.__reader.samples())
 
     def __repr__(self):
@@ -192,9 +291,17 @@ except NameError:  # Python 3
 
 
 class StateDictionary(dict):
+    """ StateDictionary is a Dict with extended slicing behaviour for working with states
+
+     dict['State'] returns the state as ndarray 1 x samples
+     dict[0:100] returns a slice of all states as StateDictionary
+
+
+     dict['State'][:,:100] is equivalent to dict[:100]['State']
+     """
 
     def __getitem__(self, slice_var):
-        if isinstance(slice_var, str_base): # standard dict behaviour
+        if isinstance(slice_var, str_base):  # standard dict behaviour
             return super(StateDictionary, self).__getitem__(slice_var)
         else:  # slice states instead of getting key
             return self.__slicedict(slice_var)
@@ -209,3 +316,7 @@ class StateDictionary(dict):
         return len(self.keys()), self[list(self.keys())[0]].shape[1]
 
     shape = property(_getshape)
+    """ 
+    Returns the shape as Number of States x samples
+    
+    """

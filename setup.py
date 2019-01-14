@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='BCI2kReader',
-    version='0.30dev',
+    version='0.31dev0',
     packages=['BCI2kReader',],
     license='GNU 3',
     author='Markus Adamek',
