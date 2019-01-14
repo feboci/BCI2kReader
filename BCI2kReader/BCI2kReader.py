@@ -76,6 +76,7 @@ class BCI2kReader(io.IOBase):
         pos = self.tell()
         if self.__usecache:
             self.__signals, self.__states = self.__reader.decode('all')
+            self.__states = StateDictionary(self.__states)
             self.seek(pos, 0)
             return self.__signals
         else:
@@ -91,12 +92,13 @@ class BCI2kReader(io.IOBase):
         pos = self.tell()
         if self.__usecache:
             self.__signals, self.__states = self.__reader.decode('all')
+            self.__states = StateDictionary(self.__states)
             self.seek(pos, 0)
             return self.__states
         else:
             signalbuffer, statebuffer = self.__reader.decode('all')
             self.seek(pos, 0)
-            return statebuffer
+            return StateDictionary(statebuffer)
         # set position
 
     states = property(_states)
@@ -115,26 +117,22 @@ class BCI2kReader(io.IOBase):
             pos = self.tell()
             if nsamp < 0:
                 nsamp = self.__reader.samples()-pos
-            return self.__signals[:, pos:pos+nsamp], self.__slicedict(self.__states, slice(pos, pos+nsamp))
+            return self.__signals[:, pos:pos+nsamp], self.__slicedict[slice(pos, pos+nsamp)]
         else:
-            return self.__reader.decode(nsamp, 'all', apply_gain)
+            sig, states = self.__reader.decode(nsamp, 'all', apply_gain)
+            states = StateDictionary(states)
+            return sig, states
 
     def readall(self, apply_gain=True):
         if self.__states is not None and self.__usecache:
             return self.__signals, self.__states
         else:
             if self.__usecache:
-                self.__signals, self.__states = self.__reader.decode('all', 'all', apply_gain)
+                self.__signals, statebuffer = self.__reader.decode('all', 'all', apply_gain)
+                self.__states = StateDictionary(statebuffer)
                 return self.__signals, self.__states
             else:
                 return self.__reader.decode('all', 'all', apply_gain)
-
-    def __slicedict(self, dic_in, slice_idx):
-        retdict = dict.fromkeys(dic_in.keys())
-        for key in dic_in:
-            retdict[key] = dic_in[key][:,slice_idx]
-
-        return retdict
 
     def __len__(self):
         return len(self.__reader.samples())
@@ -143,24 +141,43 @@ class BCI2kReader(io.IOBase):
         return self._signals, self._states
 
     def __getitem__(self, sliced):
-        sliced = sliced if isinstance(sliced,slice)  else slice(sliced,sliced+1,1)
-        ind=sliced.indices(self.__reader.samples())
-        sliced=slice(ind[0],ind[1],ind[2])
+        sliced = sliced if isinstance(sliced, slice) else slice(sliced, sliced+1, 1)
+        ind = sliced.indices(self.__reader.samples())
+        sliced=slice(ind[0], ind[1], ind[2])
         if self.__states is not None and self.__usecache:
-            return self.__signals[:, sliced], self.__slicedict(self.__states, sliced)
+            return self.__signals[:, sliced], self.__states[sliced]
         else:
             old = self.tell()
             self.seek(sliced.start, 0)
             data, states = self.read((sliced.stop-sliced.start))
             self.seek(old, 0)
             newslice = slice(0,(sliced.stop-sliced.start), sliced.step)
-            return data[:,newslice], self.__slicedict(states, newslice)
+            return data[:, newslice], states[newslice]
 
 
+try:  # Python 2
+    str_base = basestring
+    items = 'iteritems'
+except NameError:  # Python 3
+    str_base = str, bytes, bytearray
+    items = 'items'
 
 
+class StateDictionary(dict):
 
+    def __getitem__(self, slice_var):
+        if isinstance(slice_var, str_base): # standard dict behaviour
+            return super(StateDictionary, self).__getitem__(slice_var)
+        else:  # slice states instead of getting key
+            return self.__slicedict(slice_var)
 
+    def __slicedict(self, slice_idx):
+        retdict = StateDictionary.fromkeys(self.keys())
+        for key in self:
+            retdict[key] = self[key][:, slice_idx]
+        return retdict
 
+    def _getshape(self):
+        return len(self.keys()), self[list(self.keys())[0]].shape[1]
 
-
+    shape = property(_getshape)
