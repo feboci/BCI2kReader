@@ -107,7 +107,7 @@ class TestStartup(unittest.TestCase):
             signals, states = file[stimmask]
             self.assertEqual(signals.shape, (64, sum(stimmask[0, :])))
             self.assertEqual(states.shape, (8, sum(stimmask[0, :])))
-            self.assertListEqual(signals[1, :].tolist(), sigs[1, :].tolist())
+            self.assertEqual(np.all(signals[1, :] == sigs[1, :]), True)
             self.assertEqual((states['StimulusCode'] == 1).all(), True)
 
     def test_BinarySlicingUnBuffered(self):
@@ -119,7 +119,7 @@ class TestStartup(unittest.TestCase):
             signals, states = file[stimmask]
             self.assertEqual(signals.shape, (64, sum(stimmask[0, :])))
             self.assertEqual(states.shape, (8, sum(stimmask[0, :])))
-            self.assertListEqual(signals[1, :].tolist(), sigs[1, :].tolist())
+            self.assertEqual(np.all(signals[1, :] == sigs[1, :]), True)
             self.assertEqual((states['StimulusCode'] == 1).all(), True)
 
 
