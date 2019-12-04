@@ -171,7 +171,7 @@ class bcistream(object):
         fmtstr = self.headline.get('DataFormat', 'int16')
         fmt = {'int16': 'h', 'int32': 'l', 'float32': 'f'}.get(fmtstr)
         if fmt is None: raise DatFileError('unrecognized DataFormat "%s"' % fmtstr)
-        self.bytesperchannel = struct.calcsize(fmt)
+        self.bytesperchannel = struct.calcsize('='+fmt)
         self.framefmt = fmt * self.nchan + 'B' * self.stateveclen
         self.unpacksig = fmt * self.nchan + 'x' * self.stateveclen
         self.unpackstates = 'x' * self.bytesperchannel * self.nchan + 'B' * self.stateveclen

@@ -15,6 +15,7 @@ class TestStartup(unittest.TestCase):
         filename = os.path.join(dirname, 'TestData/eeg1_1.dat')
         file=b2k.BCI2kReader(filename)
         self.assertNotEqual(file, None)
+        self.assertEqual(file.signals.shape,(64,19696))
         file.close()
 
     def test_ReadInPlace(self):
